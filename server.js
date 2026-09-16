@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS categories (
 const count = db.prepare("SELECT COUNT(*) c FROM categories").get().c;
 if (!count) {
   const add = db.prepare("INSERT OR IGNORE INTO categories(name) VALUES(?)");
-  ["Nowości","Popularne","Akcesoria"].forEach(add.run, add);
+  ["Nowości","Popularne","Akcesoria"].forEach((name) => add.run(name));
 }
 const pcount = db.prepare("SELECT COUNT(*) c FROM products").get().c;
 if (!pcount) {
