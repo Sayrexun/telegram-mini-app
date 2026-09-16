@@ -1,8 +1,0 @@
-let key="";
-function login(){key=document.getElementById("key").value;if(!key)return;document.getElementById("login").hidden=true;document.getElementById("panel").hidden=false;load()}
-async function api(url,opt={}){opt.headers={...(opt.headers||{}),"Content-Type":"application/json","x-admin-key":key};const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text());return r.json()}
-async function load(){const items=await api("/api/admin/products");document.getElementById("list").innerHTML=items.map(p=>`<div class="item"><div><b>${esc(p.name)}</b><div class="muted">${esc(p.category)} · ${p.price} zł · ${p.active?"активен":"скрыт"}</div></div><button onclick="toggle(${p.id},${p.active?0:1})">${p.active?"Скрыть":"Показать"}</button><button onclick="del(${p.id})">Удалить</button></div>`).join("")}
-async function save(){const body={name:name.value.trim(),category:category.value.trim(),price:Number(price.value),image:image.value.trim(),description:description.value.trim()};if(!body.name||!body.category||!body.price)return alert("Заполни название, категорию и цену");await api("/api/admin/products",{method:"POST",body:JSON.stringify(body)});["name","category","price","image","description"].forEach(x=>document.getElementById(x).value="");load()}
-async function toggle(id,active){await api("/api/admin/products/"+id,{method:"PUT",body:JSON.stringify({name:"",category:"",price:0,image:"",description:"",active})});/* see note in README */load()}
-async function del(id){if(confirm("Удалить товар?")){await api("/api/admin/products/"+id,{method:"DELETE"});load()}}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
