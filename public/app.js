@@ -1,7 +1,7 @@
 const tg = window.Telegram?.WebApp;
 if (tg) { tg.ready(); tg.expand(); }
 
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 
 // Обычные товары-заглушки для демонстрации дизайна.
 // Когда понадобится подключить каталог из API, поменяй DEMO_MODE на false.
