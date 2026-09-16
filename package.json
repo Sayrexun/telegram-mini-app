@@ -1,7 +1,0 @@
-{
-  "name": "telegram-mini-app-catalog",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "express": "^4.21.2", "better-sqlite3": "^11.8.1" }
-}
