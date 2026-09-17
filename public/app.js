@@ -291,12 +291,217 @@ document.querySelectorAll(".side-link").forEach((button) => {
 // Заявки подключатся к соответствующему API, если он есть на сервере.
 window.openRequestForm = function () {
   normalizeCart();
+
   if (!cart.length) {
     notify("Корзина пуста");
     return;
   }
-  notify("Форма заявки будет доступна после подключения API заявок");
+
+  const items = cart
+    .map((item) => {
+      const product = data.products.find(
+        (p) => Number(p.id) === Number(item.id)
+      );
+
+      if (!product) return null;
+
+      return {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        qty: Number(item.qty) || 1,
+        variant: item.variant || ""
+      };
+    })
+    .filter(Boolean);
+
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
+
+  document.querySelector(".modal")?.remove();
+
+  const modal = document.createElement("div");
+  modal.className = "modal";
+
+  modal.innerHTML = `
+    <div class="sheet">
+
+      <button
+        class="modal-close"
+        onclick="this.closest('.modal').remove()"
+      >
+        ×
+      </button>
+
+      <h2>Новая заявка</h2>
+
+      <div class="request-items">
+        ${items.map((item) => `
+          <div class="cart-item">
+            <span>
+              ${esc(item.name)}
+              ${
+                item.variant
+                  ? `<small> · ${esc(item.variant)}</small>`
+                  : ""
+              }
+              × ${item.qty}
+            </span>
+
+            <b>
+              ${(item.price * item.qty).toFixed(0)} zł
+            </b>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="product-bottom">
+        <b>Итого</b>
+        <b class="price">
+          ${total.toFixed(0)} zł
+        </b>
+      </div>
+
+      <textarea
+        id="requestComment"
+        placeholder="Комментарий (необязательно)"
+        style="
+          width:100%;
+          min-height:90px;
+          margin:14px 0;
+          padding:12px;
+          box-sizing:border-box;
+          border-radius:10px;
+          border:1px solid #30293b;
+          background:#0d0b12;
+          color:#fff;
+          resize:vertical;
+        "
+      ></textarea>
+
+      <div class="cart-actions">
+
+        <button
+          class="secondary"
+          onclick="this.closest('.modal').remove()"
+        >
+          Отмена
+        </button>
+
+        <button
+          class="primary"
+          onclick="submitRequest()"
+        >
+          Отправить заявку
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(modal);
 };
 
-updateCartCount();
-loadCatalog();
+
+window.submitRequest = async function () {
+
+  const user =
+    window.Telegram?.WebApp?.initDataUnsafe?.user;
+
+  if (!user?.id) {
+    notify("Откройте каталог внутри Telegram");
+    return;
+  }
+
+  normalizeCart();
+
+  if (!cart.length) {
+    notify("Корзина пуста");
+    return;
+  }
+
+  const items = cart
+    .map((item) => {
+
+      const product = data.products.find(
+        (p) => Number(p.id) === Number(item.id)
+      );
+
+      if (!product) return null;
+
+      return {
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        qty: Number(item.qty) || 1,
+        variant: item.variant || ""
+      };
+
+    })
+    .filter(Boolean);
+
+  const total = items.reduce(
+    (sum, item) =>
+      sum + item.price * item.qty,
+    0
+  );
+
+  const comment =
+    $("requestComment")?.value || "";
+
+  try {
+
+    const response = await fetch(
+      "/api/requests",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          user,
+          items,
+          total,
+          comment
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error || "Request failed"
+      );
+    }
+
+    cart = [];
+
+    updateCartCount();
+
+    document
+      .querySelector(".modal")
+      ?.remove();
+
+    notify(
+      `Заявка №${result.id} отправлена`
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Ошибка отправки заявки:",
+      error
+    );
+
+    notify(
+      "Не удалось отправить заявку"
+    );
+
+  }
+};
